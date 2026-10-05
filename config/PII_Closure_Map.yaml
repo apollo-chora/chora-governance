@@ -1,0 +1,96 @@
+# PII_Closure_Map for chora-governance domain.
+#
+# Source-of-truth: .claude/skills/account-closure-saga/SKILL.md
+# Owning team: Team 3 (Platform). Owning DB: chora_governance.
+#
+# Governance hosts AuditLog (hash-chained) + IMDA assessments + compliance
+# policy + risk register + Gatekeeper decisions.
+#
+# CRITICAL: AuditLog hash chain is APPEND-ONLY and IMMUTABLE for
+# regulator integrity. Do NOT pseudonymise rows that anchor the chain.
+# Tokenise display fields ONLY; preserve the hash-bearing columns
+# (prev_hash, this_hash, action, evidence_hash, etc.).
+
+domain: chora_governance
+version: "1.0"
+
+fields_to_tokenize:
+  - table: audit_log
+    columns:
+      # NEVER touch hash columns (prev_hash, this_hash, action, evidence_hash).
+      # Only display + freeform text fields are tokenised.
+      - column: actor_display_name
+        strategy: tombstone_string
+        value: "Former member"
+      - column: subject_display_name
+        strategy: tombstone_string
+        value: "Former member"
+      # Free-text "reason" preserved (essential for audit trail).
+
+  - table: imda_assessments
+    columns:
+      # IMDA assessments are evidence — preserve all factual fields;
+      # tombstone display only.
+      - column: assessor_display_name
+        strategy: tombstone_string
+        value: "Former member"
+      - column: subject_display_name
+        strategy: tombstone_string
+        value: "Former member"
+
+  - table: gatekeeper_decisions
+    columns:
+      # Gatekeeper decision rows are critical IMDA D4 evidence.
+      # Decision verdict, evidence ID, model_id all preserved.
+      - column: actor_display_name
+        strategy: tombstone_string
+        value: "Former member"
+
+  - table: risk_register_entries
+    columns:
+      - column: reporter_display_name
+        strategy: tombstone_string
+        value: "Former member"
+      # Risk content + classification preserved.
+
+  - table: compliance_policy_acknowledgements
+    columns:
+      # User acked policy X on date Y — date + policy_id preserved (proof
+      # of consent at the time); display name tokenised.
+      - column: acknowledged_by_display_name
+        strategy: tombstone_string
+        value: "Former member"
+
+  - table: hitl_decisions
+    columns:
+      # HITL approver display name tombstoned; decision preserved.
+      - column: approver_display_name
+        strategy: tombstone_string
+        value: "Former member"
+      - column: requestor_display_name
+        strategy: tombstone_string
+        value: "Former member"
+
+  - table: pii_closure_map_registry
+    columns:
+      # Registry of WHO uploaded WHICH PII map; tombstone uploader display.
+      - column: uploaded_by_display_name
+        strategy: tombstone_string
+        value: "Former member"
+
+retention_days_by_jurisdiction:
+  # Audit log retention often EXCEEDS user retention. Per Tier 3 rule,
+  # NEVER shorter than the floor (here 2557 = 7y SG/EU). Some regulators
+  # demand audit logs persist 10y+ — that's the next pass.
+  EU: 2557
+  SG: 2557
+  US: 1826
+  ZA: 1826
+  BR: 1826
+  default: 2557
+
+on_creator_closure:
+  # Governance is a witness, not a creator. PRESERVE_ORPHAN: rows persist
+  # with tombstoned actor display.
+  strategy: preserve_orphan
+  show_authorship_as: "Former member"

@@ -1,0 +1,291 @@
+# imda_rubric.yaml — IMDA D1-D4 rubric items (authoritative source per Phase B).
+#
+# Canonical labels per ADR-141 (IMDA MGF v2 + AI Verify aligned):
+#   D1 → accountability
+#   D2 → transparency
+#   D3 → safety_and_robustness
+#   D4 → fairness_and_human_oversight
+#
+# Each rubric item is one of two derivation modes:
+#
+#   derivation_mode: auto
+#     Status is computed at request time by the function registered under
+#     auto_query_key in internal/domain/rubric/resolver.go.
+#
+#   derivation_mode: static
+#     Status is taken straight from static_status. Used for subjective items
+#     (RACI matrix, threat-model document existence, etc.) where no event /
+#     evidence row exists to derive from. A static item MAY carry an
+#     `evidence_url` deep-link to the repo .md doc backing it — the resolver
+#     surfaces it as the FE "View evidence ↗" link.
+#
+# Status values: PASS | PARTIAL | FAIL
+#
+# priority: P1 | P2 | P3 — remediation priority, drives the O+ dimensions
+# traffic-light + the per-item badge:
+#   P1 = safety / security / legal / core-accountability — a single P1 FAIL
+#        turns the dimension RED.
+#   P2 = documentation / process / standard checks — TWO OR MORE P2 FAILs turn
+#        the dimension AMBER.
+#   P3 = nice-to-have — never affects the traffic light.
+#
+# Documentation-related static items link existing repo docs as evidence
+# (per 2026-06-02 directive: "use current applicable .md docs from gh repo and
+# link the evidences to FE"). Genuinely-unimplemented items (ai_disclosure,
+# environmental_impact) remain FAIL — honest posture, never fabricated.
+#
+# Auto-mode items dispatch into resolver.go's function registry which counts
+# evidence rows in the per-dimension aggregates (accountability_evidence,
+# decision_explanation, eval_runs, hitl_decision_log, etc.). Thresholds for
+# the auto modes are documented inline in resolver.go.
+
+dimensions:
+  # ---------------------------------------------------------------------------
+  # D1 accountability — 9 rubric items
+  # ---------------------------------------------------------------------------
+  accountability:
+    items:
+      - id: audit_trail_coverage
+        ref: "1.1"
+        title: "Audit trail for all AI decisions"
+        evidence_source: "Cloud Trace + AgentDecisionLog"
+        derivation_mode: auto
+        auto_query_key: audit_trail_coverage
+        priority: P1
+      - id: cost_tracking
+        ref: "1.1.2"
+        title: "Cost tracking per model and per agent"
+        evidence_source: "TokenUsageLedger"
+        derivation_mode: auto
+        auto_query_key: cost_tracking
+        priority: P2
+      - id: risk_classification
+        ref: "1.2"
+        title: "Risk classification of AI components"
+        evidence_source: "DREAD risk scoring + ai-governance skill"
+        derivation_mode: static
+        static_status: PASS
+        priority: P1
+        evidence_url: "https://github.com/apollo-chora/chora-governance/blob/main/docs/security/dread-risk-scoring.md"
+      - id: threat_model_document
+        ref: "1.3.1"
+        title: "Formal threat model document"
+        evidence_source: "STRIDE threat model + deepteam"
+        derivation_mode: static
+        static_status: PASS
+        priority: P2
+        evidence_url: "https://github.com/apollo-chora/chora-governance/blob/main/docs/security/stride-threat-model.md"
+      - id: incident_runbook
+        ref: "1.3.2"
+        title: "Incident intervention runbook"
+        evidence_source: "AI incident response playbook + SRE runbook"
+        derivation_mode: static
+        static_status: PASS
+        priority: P2
+        evidence_url: "https://github.com/apollo-chora/chora-governance/blob/main/docs/security/ai-incident-response-playbook.md"
+      - id: raci_matrix
+        ref: "1.4"
+        title: "Stakeholder responsibility matrix"
+        evidence_source: "Agentic AI RACI matrix"
+        derivation_mode: static
+        static_status: PASS
+        priority: P2
+        evidence_url: "https://github.com/apollo-chora/chora-governance/blob/main/docs/governance/agentic-ai-raci.md"
+      - id: data_lineage
+        ref: "1.5"
+        title: "Data lineage from ingestion to decision"
+        evidence_source: "Cloud Trace grounding_sources + chunk tracking"
+        derivation_mode: auto
+        auto_query_key: data_lineage
+        priority: P2
+      - id: data_retention
+        ref: "1.6"
+        title: "Data retention and lifecycle policies"
+        evidence_source: "Responsible AI lifecycle (8-stage) + O+ lifecycle"
+        derivation_mode: static
+        static_status: PASS
+        priority: P1
+        evidence_url: "https://github.com/apollo-chora/chora-governance/blob/main/docs/governance/responsible-ai-lifecycle.md"
+      - id: data_quality_validation
+        ref: "1.7"
+        title: "Data quality validation at ingestion"
+        evidence_source: "Validator Agent + GuardrailScanner"
+        derivation_mode: auto
+        auto_query_key: data_quality_validation
+        priority: P2
+
+  # ---------------------------------------------------------------------------
+  # D2 transparency — 4 rubric items
+  # ---------------------------------------------------------------------------
+  transparency:
+    items:
+      - id: explainability_reasoning
+        ref: "2.1"
+        title: "Explainability of AI reasoning"
+        evidence_source: "Cloud Trace reasoning_steps"
+        derivation_mode: auto
+        auto_query_key: explainability_reasoning
+        priority: P2
+      - id: source_attribution
+        ref: "2.2"
+        title: "Source attribution for generated content"
+        evidence_source: "Cloud Trace grounding_sources"
+        derivation_mode: auto
+        auto_query_key: source_attribution
+        priority: P2
+      - id: model_version_tracking
+        ref: "2.3"
+        title: "Model versioning and prompt tracking"
+        evidence_source: "Git-tracked YAML prompts + Cloud Trace"
+        derivation_mode: auto
+        auto_query_key: model_version_tracking
+        priority: P3
+      - id: ai_disclosure
+        ref: "2.4"
+        title: "User-facing AI disclosure"
+        evidence_source: "Agent capabilities disclosure"
+        derivation_mode: static
+        static_status: FAIL
+        priority: P2
+
+  # ---------------------------------------------------------------------------
+  # D3 safety_and_robustness — 10 rubric items
+  # ---------------------------------------------------------------------------
+  safety_and_robustness:
+    items:
+      - id: content_safety_pipeline
+        ref: "3.1"
+        title: "Content safety screening pipeline"
+        evidence_source: "Validator Agent + GuardrailScanner"
+        derivation_mode: auto
+        auto_query_key: content_safety_pipeline
+        priority: P1
+      - id: token_budget
+        ref: "3.2"
+        title: "Token budget enforcement"
+        evidence_source: "Model Broker TASK_TIER_MAP"
+        derivation_mode: static
+        static_status: PASS
+        priority: P3
+      - id: io_guardrails
+        ref: "3.3"
+        title: "Input/output guardrails enforcement"
+        evidence_source: "Cloud Model Armor + Cloud DLP"
+        derivation_mode: auto
+        auto_query_key: io_guardrails
+        priority: P1
+      - id: adversarial_testing
+        ref: "3.4.1"
+        title: "Adversarial testing coverage"
+        evidence_source: "deepteam + promptfoo"
+        derivation_mode: auto
+        auto_query_key: adversarial_testing
+        priority: P2
+      - id: quality_evaluation
+        ref: "3.4.2"
+        title: "Quality evaluation of AI outputs"
+        evidence_source: "deepeval (4 metrics)"
+        derivation_mode: auto
+        auto_query_key: quality_evaluation
+        priority: P2
+      - id: multi_agent_integration
+        ref: "3.4.3"
+        title: "Multi-agent integration scenarios"
+        evidence_source: "M14 BLANKET chaos battery"
+        derivation_mode: static
+        static_status: PARTIAL
+        priority: P2
+      - id: regression_detection
+        ref: "3.4.4"
+        title: "Regression detection and drift monitoring"
+        evidence_source: "deepeval scheduled + Cloud Trace"
+        derivation_mode: auto
+        auto_query_key: regression_detection
+        priority: P2
+      - id: circuit_breaker
+        ref: "3.5"
+        title: "Circuit breaker and fallback chains"
+        evidence_source: "Orchestrator circuit breaker"
+        derivation_mode: auto
+        auto_query_key: circuit_breaker
+        priority: P2
+      - id: quality_loop_protection
+        ref: "3.6"
+        title: "Quality loop protection (3 layers)"
+        evidence_source: "Orchestrator state machine"
+        derivation_mode: static
+        static_status: PASS
+        priority: P2
+      - id: l10_events_cloud_trace
+        ref: "3.7"
+        title: "L-10 events wired to Cloud Trace"
+        evidence_source: "Model Broker TracingPort + agent monitoring architecture"
+        derivation_mode: static
+        static_status: PARTIAL
+        priority: P3
+        evidence_url: "https://github.com/apollo-chora/chora-governance/blob/main/docs/governance/agent-monitoring-architecture.md"
+
+  # ---------------------------------------------------------------------------
+  # D4 fairness_and_human_oversight — 8 rubric items
+  # ---------------------------------------------------------------------------
+  fairness_and_human_oversight:
+    items:
+      - id: bias_testing
+        ref: "4.1"
+        title: "Bias testing (deterministic attacks)"
+        evidence_source: "deepteam + deepeval BiasMetric"
+        derivation_mode: auto
+        auto_query_key: bias_testing
+        priority: P1
+      - id: hitl_approval_gates
+        ref: "4.2.1"
+        title: "Human-in-the-loop approval gates"
+        evidence_source: "Q&A review + Report distribution"
+        derivation_mode: auto
+        auto_query_key: hitl_approval_gates
+        priority: P1
+      - id: hitl_effectiveness
+        ref: "4.2.2"
+        title: "Human oversight effectiveness measurement"
+        evidence_source: "HITL oversight SLA (7 real resolved gates) + Cloud Trace"
+        derivation_mode: static
+        static_status: PASS
+        priority: P2
+        evidence_url: "https://github.com/apollo-chora/chora-governance/blob/main/docs/governance/hitl-oversight-sla.md"
+      - id: automated_monitoring
+        ref: "4.2.3"
+        title: "Automated monitoring and alerting"
+        evidence_source: "Observability alerts runbook (5 §6 rules + 120 live Cloud Monitoring policies)"
+        derivation_mode: static
+        static_status: PASS
+        priority: P2
+        evidence_url: "https://github.com/apollo-chora/chora-governance/blob/main/docs/governance/observability-alerts-runbook.md"
+      - id: demographic_bias_testing
+        ref: "4.3"
+        title: "Demographic bias testing (100+ samples)"
+        evidence_source: "deepeval controlled experiment"
+        derivation_mode: auto
+        auto_query_key: demographic_bias_testing
+        priority: P2
+      - id: rls_isolation
+        ref: "4.4"
+        title: "Assessor-scoped data isolation (RLS)"
+        evidence_source: "PostgreSQL RLS + ADR-165 PLATFORM_OPERATOR bypass audit"
+        derivation_mode: static
+        static_status: PASS
+        priority: P1
+        evidence_url: "https://github.com/apollo-chora/chora-governance/blob/main/docs/architecture/adrs/adr-165-platform-operator-role-rls-bypass.md"
+      - id: environmental_impact
+        ref: "4.5"
+        title: "Environmental impact tracking"
+        evidence_source: "Cloud Trace cost tracking"
+        derivation_mode: static
+        static_status: FAIL
+        priority: P3
+      - id: accessibility_compliance
+        ref: "4.6"
+        title: "Accessibility compliance (WCAG)"
+        evidence_source: "axe-core via Playwright"
+        derivation_mode: static
+        static_status: PASS
+        priority: P2
